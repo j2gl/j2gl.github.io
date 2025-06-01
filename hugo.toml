@@ -1,0 +1,9 @@
+baseURL = "https://j2gl.github.io/"
+languageCode = "en-us"
+title = "j2gl bytes"
+theme = "PaperMod"
+
+
+[params]
+  author = "j2gl"
+  description = "A personal log of useful things I've done, and how to do them again."
