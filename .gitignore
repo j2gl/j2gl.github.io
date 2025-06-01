@@ -2,6 +2,7 @@
 /public/
 /resources/_gen/
 /hugo_stats.json
+.hugo_build.lock
 
 # OS generated files (macOS)
 .DS_Store
