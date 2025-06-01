@@ -1,104 +1,127 @@
 +++
 date = '2021-05-13T19:34:42+02:00'
 draft = false
-title = 'Filter jsonb array data in PostgreSQL '
-tags = ['sql']
-theme = "PaperMod"
+title = 'Filter jsonb Array Data in PostgreSQL'
+tags = ['sql', 'postgresql', 'jsonb']
+theme = 'PaperMod'
 +++
 
-## What happened?
+## Filtering `jsonb` Array Data in PostgreSQL
 
-One day I had the issue on how should I filter data from a table in postgres.   But the catch is the data was 
-in a jsonb field, which makes it very different.
+One day, I faced a challenge: how do you filter rows in a PostgreSQL table when the data you want to query lives inside a `jsonb` array?
 
-Here is the example:
+Let me walk you through the solution step by step.
 
+---
 
-Firs we will create a table called `table1` with json data in `dummy_data` field.
+## The Setup
+
+We will ll start by creating a temporary table called `table1` with some JSON data stored in a column named `dummy_data`:
 
 ```sql
 CREATE TEMP TABLE table1 AS
   SELECT id::int, dummy_data::jsonb FROM ( 
-  	values 
-    	( 1, '[
-            {"code": "AB123456", "other": "xxx",  "amount": 10, "step": "STEP_1"},
-            {"code": "HH654654", "other": null,   "amount": 20, "step": "STEP_2"}
-         ]'),
-         (2, '[
-            {"code": "45648asd", "other": null,   "amount": 30, "step": "STEP_1"},
-            {"code": "QWERASDF", "other": "asdf", "amount": 40, "step": "STEP_2"}
-        ]'),
-    (3, '[]'),
-    (4, '[
-            {"code": "POIUASDF", "other": null,   "amount": 50, "step": "STEP_1"},
-            {"code": "SFDTGFDJ", "other": null,   "amount": 60, "step": "STEP_2"},
-            {"code": "DFGERUDD", "other": "1234", "amount": 70, "step": "STEP_3"},
-            {"code": "34567DTH", "other": null,   "amount": 80, "step": "STEP_4"}
-        ]')
+    VALUES 
+      (1, '[
+          {"code": "AB123456", "other": "xxx",  "amount": 10, "step": "STEP_1"},
+          {"code": "HH654654", "other": null,   "amount": 20, "step": "STEP_2"}
+       ]'),
+      (2, '[
+          {"code": "45648asd", "other": null,   "amount": 30, "step": "STEP_1"},
+          {"code": "QWERASDF", "other": "asdf", "amount": 40, "step": "STEP_2"}
+       ]'),
+      (3, '[]'),
+      (4, '[
+          {"code": "POIUASDF", "other": null,   "amount": 50, "step": "STEP_1"},
+          {"code": "SFDTGFDJ", "other": null,   "amount": 60, "step": "STEP_2"},
+          {"code": "DFGERUDD", "other": "1234", "amount": 70, "step": "STEP_3"},
+          {"code": "34567DTH", "other": null,   "amount": 80, "step": "STEP_4"}
+       ]')
   ) AS t(id, dummy_data);
 ```
 
-It will create the temporary table1 with this data:
-```json
-id|dummy_data                                                                                                                                                                                                                                                     |
---|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
- 1|[{"code": "AB123456", "step": "STEP_1", "other": "xxx", "amount": 10}, {"code": "HH654654", "step": "STEP_2", "other": null, "amount": 20}]                                                                                                                    |
- 2|[{"code": "45648asd", "step": "STEP_1", "other": null, "amount": 30}, {"code": "QWERASDF", "step": "STEP_2", "other": "asdf", "amount": 40}]                                                                                                                   |
- 3|[]                                                                                                                                                                                                                                                             |
- 4|[{"code": "POIUASDF", "step": "STEP_1", "other": null, "amount": 50}, {"code": "SFDTGFDJ", "step": "STEP_2", "other": null, "amount": 60}, {"code": "DFGERUDD", "step": "STEP_3", "other": "1234", "amount": 70}, {"code": "34567DTH", "step": "STEP_4", "other|
+This creates a table with data similar to the following:
+
+```text
+id | dummy_data
+---|---------------------------------------------------------------------
+ 1 | [{"code": "AB123456", "step": "STEP_1", ...}, {"code": "HH654654", "step": "STEP_2", ...}]
+ 2 | [{"code": "45648asd", "step": "STEP_1", ...}, {"code": "QWERASDF", "step": "STEP_2", ...}]
+ 3 | []
+ 4 | [{"code": "POIUASDF", "step": "STEP_1", ...}, {"code": "SFDTGFDJ", "step": "STEP_2", ...}, ...]
 ```
 
-The question is how can I get all the rows that has `"step":"STEP_1"` or `"step":"STEP_2"` in the data.  
+---
 
-### Step 1
-First we use this query to transform every item in the array in a row using `jsonb_array_elements`, check the results.
+## Goal
+
+We want to filter the rows and extract only those JSON elements where `"step"` is either `"STEP_1"` or `"STEP_4"`.
+
+---
+
+## Step 1: Flatten the `jsonb` Array
+
+Use `jsonb_array_elements()` to expand each JSON array into individual rows.
 
 ```sql
 SELECT 
-		id, jsonb_array_elements(dummy_data) as steps
+  id, jsonb_array_elements(dummy_data) AS steps
 FROM 
+  table1;
+```
+
+Result:
+
+```text
+id | steps
+---|-----------------------------------------------------------
+ 1 | {"code": "AB123456", "step": "STEP_1", ...}
+ 1 | {"code": "HH654654", "step": "STEP_2", ...}
+ 2 | {"code": "45648asd", "step": "STEP_1", ...}
+ 2 | {"code": "QWERASDF", "step": "STEP_2", ...}
+ 4 | {"code": "POIUASDF", "step": "STEP_1", ...}
+ 4 | {"code": "SFDTGFDJ", "step": "STEP_2", ...}
+ 4 | {"code": "DFGERUDD", "step": "STEP_3", ...}
+ 4 | {"code": "34567DTH", "step": "STEP_4", ...}
+```
+
+📚 See the official docs: https://www.postgresql.org/docs/current/functions-json.html
+
+---
+
+## Step 2: Filter the Desired Steps
+
+Now that the data is flattened, we can filter it using a `WITH` clause and a `WHERE` condition.
+
+```sql
+WITH expanded AS (
+  SELECT 
+    id, jsonb_array_elements(dummy_data) AS steps
+  FROM 
     table1
-
-id|steps                                                                |
---|---------------------------------------------------------------------|
- 1|{"code": "AB123456", "step": "STEP_1", "other": "xxx", "amount": 10} |
- 1|{"code": "HH654654", "step": "STEP_2", "other": null, "amount": 20}  |
- 2|{"code": "45648asd", "step": "STEP_1", "other": null, "amount": 30}  |
- 2|{"code": "QWERASDF", "step": "STEP_2", "other": "asdf", "amount": 40}|
- 4|{"code": "POIUASDF", "step": "STEP_1", "other": null, "amount": 50}  |
- 4|{"code": "SFDTGFDJ", "step": "STEP_2", "other": null, "amount": 60}  |
- 4|{"code": "DFGERUDD", "step": "STEP_3", "other": "1234", "amount": 70}|
- 4|{"code": "34567DTH", "step": "STEP_4", "other": null, "amount": 80}  |
-```
-
-For `jsonb_array_elements`, check the official [docs](https://www.postgresql.org/docs/9.5/functions-json.html).
-
-
-### Step 2
-
-Now that we have all the rows flattened, it's a matter to use a combination of a `WITH` with `WHERE` in the query.
-
-```sql
-WITH t1 AS (
-    -- The query from step 1
-	SELECT 
-		id, jsonb_array_elements(dummy_data) as steps
-	FROM 
-		table1
-) 
+)
 SELECT 
-	id, steps, steps ->> 'step'
+  id, steps, steps ->> 'step' AS step_value
 FROM 
-	t1
+  expanded
 WHERE 
-	steps ->> 'step' = 'STEP_1'
-	OR steps ->> 'step' = 'STEP_4'
-
-id|steps                                                               |?column?|
---|--------------------------------------------------------------------|--------|
- 1|{"code": "AB123456", "step": "STEP_1", "other": "xxx", "amount": 10}|STEP_1  |
- 2|{"code": "45648asd", "step": "STEP_1", "other": null, "amount": 30} |STEP_1  |
- 4|{"code": "POIUASDF", "step": "STEP_1", "other": null, "amount": 50} |STEP_1  |
- 4|{"code": "34567DTH", "step": "STEP_4", "other": null, "amount": 80} |STEP_4  |
+  steps ->> 'step' IN ('STEP_1', 'STEP_4');
 ```
+
+Result:
+
+```text
+id | steps                                                 | step_value
+---|--------------------------------------------------------|------------
+ 1 | {"code": "AB123456", "step": "STEP_1", ...}            | STEP_1
+ 2 | {"code": "45648asd", "step": "STEP_1", ...}            | STEP_1
+ 4 | {"code": "POIUASDF", "step": "STEP_1", ...}            | STEP_1
+ 4 | {"code": "34567DTH", "step": "STEP_4", ...}            | STEP_4
+```
+
+---
+
+## Conclusion
+
+Filtering `jsonb` arrays in PostgreSQL becomes straightforward once you flatten the array using `jsonb_array_elements()` and apply standard SQL filtering logic.
 
