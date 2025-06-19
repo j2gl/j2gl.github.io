@@ -3,7 +3,7 @@ date = '2021-04-16T19:34:42+02:00'
 draft = false
 title = 'Compressing Videos on macOS'
 tags = ['ffmpeg', 'macOS', 'video compression', 'tips']
-theme = "PaperMod"
+theme = 'PaperMod'
 +++
 
 ## 📹 Compressing Videos on macOS Using `ffmpeg`
