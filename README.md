@@ -1,5 +1,6 @@
 # README
 
+This is my website [j2gl-bytes](https://j2gl.github.io/) Git repository.  You can check it here: https://j2gl.github.io/.
 
 ## Basic commands
 
