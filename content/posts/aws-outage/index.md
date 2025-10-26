@@ -1,11 +1,12 @@
 ---
 date: '2025-10-20T11:20:29+02:00'
-draft: true
+draft: false
 title: 'AWS Outage'
 theme: 'Tech'
 ---
 
-It's incredible how much we depend on AWS these days. So many services and products are built on top of its infrastructure, and today’s outage was a stark reminder of that. Here’s how it impacted my work:
+![Build on AWS](images/build-with-aws-4.png)
+It's incredible how much we depend on AWS these days. So many services and products are built on top of its infrastructure, and today's outage was a stark reminder of that. Here's how it personally impacted my work:
 
 1. **GitHub Actions – Builds**
     * My CI/CD pipelines were stuck, waiting for AWS to recover.
@@ -32,4 +33,6 @@ It's incredible how much we depend on AWS these days. So many services and produ
 
 Honestly, it must have been a wild day to be the on-call engineer at AWS!
 
-The funniest part? Today, several folks from Amazon visited our office to encourage us to use even more of their services. They handed out promotional goodies like stickers and keychains—talk about timing!
+The funniest part? Today, several folks from Amazon visited us to promotion more of their services. They give away some promotional goodies like stickers and keychains, great timing!
+
+By the way, here's the official AWS summary if you want to read more: [DynamoDB Service Disruption](https://aws.amazon.com/message/101925/).
